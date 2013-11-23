@@ -43,7 +43,7 @@
 			function storeData(){
 				var db = window.openDatabase("simpledb", "1.0", "simpledb", 200000);
 				db.transaction(
-					function (tx){tx.executeSql($('#data')[0].value);}, 
+					function (tx){tx.executeSql('INSERT INTO SIMPLE (data) VALUES ('+$('#data')[0].value+')');}, 
 					function (err){console.log("Error storing data: "+err.code);}, 
 					function (suc){console.log("Success storing data!");}
 				);
