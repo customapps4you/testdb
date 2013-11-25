@@ -27,8 +27,12 @@
 			}
 			
 			function populateDB(tx) {
-				tx.executeSql('DROP TABLE IF EXISTS SIMPLE');
-				tx.executeSql('CREATE TABLE IF NOT EXISTS SIMPLE (data)');
+				tx.executeSql('DROP TABLE IF EXISTS DEMO');
+                tx.executeSql('CREATE TABLE IF NOT EXISTS DEMO (id unique, data)');
+                tx.executeSql('INSERT INTO DEMO (id, data) VALUES (1, "First row")');
+				tx.executeSql('INSERT INTO DEMO (id, data) VALUES (2, "Second row")');
+				tx.executeSql('INSERT INTO DEMO (id, data) VALUES (3, "Third row")');
+				tx.executeSql('INSERT INTO DEMO (id, data) VALUES (4, "Fourth row")');
 			}
 
 			function querySuccess(tx, results) {
@@ -36,14 +40,36 @@
 				console.log("simple table: " + len + " rows found.");
 				$('#dataset').empty();
 				for (var i=0; i<len; i++){
-					$('#dataset').append('<li>'+results.rows.item(i).data+'</li>');
+					$('#dataset').append('<li>ID: '+results.rows.item(i).id+' DATA:'+results.rows.item(i).data+'</li>');
 				}
 			}
 			
-			function storeData(){
+			function getLastId(callback){
 				var db = window.openDatabase("simpledb", "1.0", "simpledb", 200000);
 				db.transaction(
-					function (tx){tx.executeSql('INSERT INTO SIMPLE (data) VALUES ('+$('#data')[0].value+')');}, 
+					function (tx){
+						tx.executeSql('SELECT id FROM DEMO ORDER BY id DESC LIMIT 1', [], 
+							function (tx, results){callback(results.rows.item(0).id);}, 
+							function (err){console.log("Error querying last ID: "+err.code);});	
+					}, 
+					function (err){console.log("Error last ID: "+err.code);}, 
+					function (suc){console.log("Success last ID!");}
+				);
+			}
+			
+			function storeData(){
+				getLastId(function(id){
+					storeWithLastId(id+1,$('#data')[0].value);
+				});
+			}
+			
+			function storeWithLastId(id,data){
+				var db = window.openDatabase("simpledb", "1.0", "simpledb", 200000);
+				var insertClause = 'INSERT INTO DEMO (id,data) VALUES ('+id+',"'+data+'")';
+				console.log('Insert clause: '+insertClause);
+				
+				db.transaction(
+					function (tx){tx.executeSql(insertClause);}, 
 					function (err){console.log("Error storing data: "+err.code);}, 
 					function (suc){console.log("Success storing data!");}
 				);
@@ -53,7 +79,7 @@
 				var db = window.openDatabase("simpledb", "1.0", "simpledb", 200000);
 				db.transaction(
 					function (tx){
-						tx.executeSql('SELECT * FROM SIMPLE', [], querySuccess,function (err){console.log("Error querying SQL: "+err.code);});	
+						tx.executeSql('SELECT * FROM DEMO', [], querySuccess,function (err){console.log("Error querying SQL: "+err.code);});	
 					}, 
 					function (err){console.log("Error retrieving data: "+err.code);}, 
 					function (suc){console.log("Success retrieving data!");}
